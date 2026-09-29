@@ -4,13 +4,16 @@ import com.jcaa.usersmanagement.application.port.in.CreateUserUseCase;
 import com.jcaa.usersmanagement.application.port.in.DeleteUserUseCase;
 import com.jcaa.usersmanagement.application.port.in.GetAllUsersUseCase;
 import com.jcaa.usersmanagement.application.port.in.GetUserByIdUseCase;
+import com.jcaa.usersmanagement.application.port.in.LoginUseCase;
 import com.jcaa.usersmanagement.application.port.in.UpdateUserUseCase;
 import com.jcaa.usersmanagement.application.service.dto.command.CreateUserCommand;
 import com.jcaa.usersmanagement.application.service.dto.command.DeleteUserCommand;
+import com.jcaa.usersmanagement.application.service.dto.command.LoginCommand;
 import com.jcaa.usersmanagement.application.service.dto.command.UpdateUserCommand;
 import com.jcaa.usersmanagement.application.service.dto.query.GetUserByIdQuery;
 import com.jcaa.usersmanagement.domain.model.UserModel;
 import com.jcaa.usersmanagement.infrastructure.entrypoint.rest.dto.request.CreateUserRestRequest;
+import com.jcaa.usersmanagement.infrastructure.entrypoint.rest.dto.request.LoginRestRequest;
 import com.jcaa.usersmanagement.infrastructure.entrypoint.rest.dto.request.UpdateUserRestRequest;
 import com.jcaa.usersmanagement.infrastructure.entrypoint.rest.dto.response.UserRestResponse;
 import com.jcaa.usersmanagement.infrastructure.entrypoint.rest.mapper.UserRestMapper;
@@ -39,6 +42,7 @@ public class UserRestController implements UserRestControllerDocs {
   private final DeleteUserUseCase deleteUserUseCase;
   private final GetUserByIdUseCase getUserByIdUseCase;
   private final GetAllUsersUseCase getAllUsersUseCase;
+  private final LoginUseCase loginUseCase;
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
@@ -75,5 +79,11 @@ public class UserRestController implements UserRestControllerDocs {
     final DeleteUserCommand command = UserRestMapper.toDeleteCommand(id);
     deleteUserUseCase.execute(command);
   }
-}
 
+  @PostMapping("/login")
+  public UserRestResponse login(@Valid @RequestBody final LoginRestRequest request) {
+    final LoginCommand command = UserRestMapper.toLoginCommand(request);
+    final UserModel user = loginUseCase.execute(command);
+    return UserRestMapper.toResponse(user);
+  }
+}

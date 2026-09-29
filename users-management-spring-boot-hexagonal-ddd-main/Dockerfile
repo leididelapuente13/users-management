@@ -6,6 +6,9 @@ WORKDIR /app
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
 
+# Asegurar formato Unix y permisos de ejecución para mvnw
+RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
+
 # Descargar las dependencias (mejora el caché de Docker)
 RUN ./mvnw dependency:go-offline
 
@@ -20,8 +23,8 @@ WORKDIR /app
 # Copiar el JAR generado desde la etapa de construcción
 COPY --from=builder /app/target/*.jar app.jar
 
-# Exponer el puerto por defecto de Spring Boot
-EXPOSE 8080
+# Exponer puertos comunes
+EXPOSE 8080 8081
 
 # Ejecutar la aplicación
 ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -1,5 +1,6 @@
 package com.jcaa.usersmanagement.infrastructure.entrypoint.rest.controller;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -10,7 +11,9 @@ import com.jcaa.usersmanagement.application.port.in.CreateUserUseCase;
 import com.jcaa.usersmanagement.application.port.in.DeleteUserUseCase;
 import com.jcaa.usersmanagement.application.port.in.GetAllUsersUseCase;
 import com.jcaa.usersmanagement.application.port.in.GetUserByIdUseCase;
+import com.jcaa.usersmanagement.application.port.in.LoginUseCase;
 import com.jcaa.usersmanagement.application.port.in.UpdateUserUseCase;
+import com.jcaa.usersmanagement.application.service.dto.command.LoginCommand;
 import com.jcaa.usersmanagement.application.service.dto.query.GetUserByIdQuery;
 import com.jcaa.usersmanagement.domain.enums.UserRole;
 import com.jcaa.usersmanagement.domain.enums.UserStatus;
@@ -42,6 +45,7 @@ class UserRestControllerTest {
   @MockBean private DeleteUserUseCase deleteUserUseCase;
   @MockBean private GetUserByIdUseCase getUserByIdUseCase;
   @MockBean private GetAllUsersUseCase getAllUsersUseCase;
+  @MockBean private LoginUseCase loginUseCase;
 
   @Test
   @DisplayName("GET /api/users/{id} debe responder usando el caso de uso inyectado por Spring")
@@ -88,5 +92,36 @@ class UserRestControllerTest {
         .perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(invalidRequest))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.status").value(400));
+  }
+
+  @Test
+  @DisplayName("POST /api/users/login debe responder 200 con el usuario autenticado")
+  void shouldLoginSuccessfullyThroughSpringMvc() throws Exception {
+    // Arrange
+    final UserModel user =
+        new UserModel(
+            new UserId(ID),
+            new UserName("Ada Lovelace"),
+            new UserEmail("ada@example.com"),
+            UserPassword.fromHash("$2a$12$abcdefghijklmnopqrstuuuuuuuuuuuuuuuuuuuuuuuuuuuuu"),
+            UserRole.ADMIN,
+            UserStatus.ACTIVE);
+    when(loginUseCase.execute(any(LoginCommand.class))).thenReturn(user);
+
+    final String loginRequest =
+        """
+        {
+          "email": "ada@example.com",
+          "password": "Password123!"
+        }
+        """;
+
+    // Act & Assert
+    mockMvc
+        .perform(post("/api/users/login").contentType(MediaType.APPLICATION_JSON).content(loginRequest))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(ID))
+        .andExpect(jsonPath("$.name").value("Ada Lovelace"))
+        .andExpect(jsonPath("$.email").value("ada@example.com"));
   }
 }

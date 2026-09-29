@@ -1,6 +1,7 @@
 package com.jcaa.usersmanagement.infrastructure.entrypoint.rest.controller;
 
 import com.jcaa.usersmanagement.infrastructure.entrypoint.rest.dto.request.CreateUserRestRequest;
+import com.jcaa.usersmanagement.infrastructure.entrypoint.rest.dto.request.LoginRestRequest;
 import com.jcaa.usersmanagement.infrastructure.entrypoint.rest.dto.request.UpdateUserRestRequest;
 import com.jcaa.usersmanagement.infrastructure.entrypoint.rest.dto.response.ApiErrorResponse;
 import com.jcaa.usersmanagement.infrastructure.entrypoint.rest.dto.response.UserRestResponse;
@@ -209,5 +210,46 @@ public interface UserRestControllerDocs {
       @Parameter(description = "ID único del usuario a eliminar.", example = "usr-001", required = true)
           @PathVariable
           String id);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // POST /api/users/login
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  @Operation(
+      summary = "Iniciar sesión (Login)",
+      description =
+          "Autentica a un usuario mediante sus credenciales (correo y contraseña). "
+              + "Retorna los datos del usuario si las credenciales son válidas y el usuario está activo.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Inicio de sesión exitoso.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = UserRestResponse.class))),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Datos de entrada inválidos (campos requeridos vacíos o formato incorrecto).",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiErrorResponse.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "Credenciales inválidas o usuario inactivo.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiErrorResponse.class))),
+    @ApiResponse(
+        responseCode = "500",
+        description = "Error interno del servidor.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ApiErrorResponse.class)))
+  })
+  UserRestResponse login(@Valid @RequestBody LoginRestRequest request);
 }
 

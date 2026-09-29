@@ -1,17 +1,26 @@
-version: '3.8'
-
 services:
+  # ========================================================
+  # Servicio Spring Boot con MySQL (Perfil por defecto)
+  # Ejecutar: docker compose up -d --build
+  # ========================================================
   user-service:
     build: .
+    container_name: users-management-app
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
-      # Las credenciales reemplazan las propiedades fijas de tu application.properties
+      - PORT=8081
+      - DB_TYPE=mysql
       - DB_HOST=mysql-db
       - DB_PORT=3306
       - DB_NAME=crud_usuarios
       - DB_USERNAME=root
       - DB_PASSWORD=123
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USERNAME=tu_correo@gmail.com
+      - SMTP_PASSWORD=tu_app_password
+      - SMTP_FROM_ADDRESS=tu_correo@gmail.com
     depends_on:
       mysql-db:
         condition: service_healthy
@@ -24,8 +33,57 @@ services:
     environment:
       - MYSQL_DATABASE=crud_usuarios
       - MYSQL_ROOT_PASSWORD=123
+    volumes:
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # ========================================================
+  # Servicio Spring Boot con PostgreSQL (Perfil migración)
+  # Ejecutar: docker compose --profile postgres up -d --build
+  # ========================================================
+  postgres-db:
+    container_name: postgres-db
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=crud_usuarios
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ./src/main/resources/schema-postgresql.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - postgres
+
+  user-service-postgres:
+    build: .
+    container_name: users-management-postgres-app
+    ports:
+      - "8082:8081"
+    environment:
+      - PORT=8081
+      - DB_TYPE=postgres
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_NAME=crud_usuarios
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USERNAME=leididelapuente3@gmail.com
+      - SMTP_PASSWORD=tu_app_password
+      - SMTP_FROM_ADDRESS=leididelapuente3@gmail.com
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    profiles:
+      - postgres
