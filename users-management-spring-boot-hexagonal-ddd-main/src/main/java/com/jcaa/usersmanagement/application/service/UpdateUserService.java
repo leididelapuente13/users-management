@@ -15,10 +15,12 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UpdateUserService implements UpdateUserUseCase {
@@ -43,7 +45,14 @@ public class UpdateUserService implements UpdateUserUseCase {
         UserApplicationMapper.fromUpdateCommandToModel(command, current.getPassword());
     final UserModel updatedUser = updateUserPort.update(userToUpdate);
 
-    emailNotificationService.notifyUserUpdated(updatedUser);
+    try {
+      emailNotificationService.notifyUserUpdated(updatedUser);
+    } catch (final Exception exception) {
+      log.warn(
+          "[UpdateUserService] No se pudo enviar el correo de actualizacion al usuario {}: {}",
+          updatedUser.getEmail().value(),
+          exception.getMessage());
+    }
 
     return updatedUser;
   }

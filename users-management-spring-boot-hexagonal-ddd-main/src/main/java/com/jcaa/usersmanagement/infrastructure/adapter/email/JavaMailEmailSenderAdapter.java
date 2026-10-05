@@ -82,6 +82,9 @@ public class JavaMailEmailSenderAdapter implements EmailSenderPort {
     properties.put(MAIL_SMTP_PORT, String.valueOf(config.port()));
     properties.put(MAIL_SMTP_AUTH, "true");
     properties.put(MAIL_SMTP_STARTTLS, "true");
+    properties.put("mail.smtp.connectiontimeout", "3000");
+    properties.put("mail.smtp.timeout", "3000");
+    properties.put("mail.smtp.writetimeout", "3000");
     return properties;
   }
 }
