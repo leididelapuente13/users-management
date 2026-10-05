@@ -10,6 +10,24 @@
 
 $ErrorActionPreference = 'Stop'
 
+# Auto-detectar JAVA_HOME si no está presente en la sesión actual
+if (-not $env:JAVA_HOME -or -not (Test-Path (Join-Path $env:JAVA_HOME "bin\java.exe"))) {
+    $candidates = @(
+        "C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot",
+        "C:\Program Files\Eclipse Adoptium\jdk-17*",
+        "C:\Program Files\Java\jdk-17*",
+        "C:\Program Files\Microsoft\jdk-17*"
+    )
+    foreach ($cand in $candidates) {
+        $found = Get-Item $cand -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($found -and (Test-Path (Join-Path $found.FullName "bin\java.exe"))) {
+            $env:JAVA_HOME = $found.FullName
+            $env:PATH = "$($found.FullName)\bin;$env:PATH"
+            break
+        }
+    }
+}
+
 $MavenVersion = "3.9.6"
 $MavenCache   = Join-Path $env:USERPROFILE ".mvn\wrapper"
 $MavenHome    = Join-Path $MavenCache "apache-maven-$MavenVersion"
@@ -30,4 +48,3 @@ if (-not (Test-Path $MavenCmd)) {
 
 & $MavenCmd $args
 exit $LASTEXITCODE
-

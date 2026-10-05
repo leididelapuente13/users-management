@@ -5,10 +5,20 @@
 @REM regarding copyright ownership.
 @REM
 @REM Apache Maven Wrapper - descarga Maven automáticamente si no está instalado.
-@REM Uso en PowerShell: .\mvnw.cmd clean install
+@REM Uso en PowerShell / CMD: .\mvnw.cmd spring-boot:run
 @REM ----------------------------------------------------------------------------
 @echo off
 setlocal enabledelayedexpansion
+
+@REM Auto-detectar JAVA_HOME si no está en la sesión actual
+if "%JAVA_HOME%"=="" (
+    for /d %%D in ("C:\Program Files\Eclipse Adoptium\jdk-17*" "C:\Program Files\Java\jdk-17*" "C:\Program Files\Microsoft\jdk-17*") do (
+        if exist "%%D\bin\java.exe" set "JAVA_HOME=%%D"
+    )
+)
+if defined JAVA_HOME (
+    set "PATH=%JAVA_HOME%\bin;%PATH%"
+)
 
 set "MAVEN_VERSION=3.9.6"
 set "MAVEN_CACHE=%USERPROFILE%\.mvn\wrapper"
@@ -45,4 +55,3 @@ exit /b 1
 
 :end
 endlocal
-
