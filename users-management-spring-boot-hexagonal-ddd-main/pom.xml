@@ -54,6 +54,12 @@
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
 
+    <!-- RabbitMQ: soporte AMQP para publicacion de eventos de dominio -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-amqp</artifactId>
+    </dependency>
+
     <!-- ======================================================== -->
     <!-- Dependencias no gestionadas por el BOM de Spring Boot     -->
     <!-- ======================================================== -->

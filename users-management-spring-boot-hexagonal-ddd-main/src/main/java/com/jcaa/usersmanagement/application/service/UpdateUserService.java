@@ -4,8 +4,10 @@ import com.jcaa.usersmanagement.application.port.in.UpdateUserUseCase;
 import com.jcaa.usersmanagement.application.port.out.GetUserByEmailPort;
 import com.jcaa.usersmanagement.application.port.out.GetUserByIdPort;
 import com.jcaa.usersmanagement.application.port.out.UpdateUserPort;
+import com.jcaa.usersmanagement.application.port.out.UserEventPublisherPort;
 import com.jcaa.usersmanagement.application.service.dto.command.UpdateUserCommand;
 import com.jcaa.usersmanagement.application.service.mapper.UserApplicationMapper;
+import com.jcaa.usersmanagement.domain.event.UserUpdatedDomainEvent;
 import com.jcaa.usersmanagement.domain.exception.UserAlreadyExistsException;
 import com.jcaa.usersmanagement.domain.exception.UserNotFoundException;
 import com.jcaa.usersmanagement.domain.model.UserModel;
@@ -14,11 +16,10 @@ import com.jcaa.usersmanagement.domain.valueobject.UserId;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.Set;
 
 @Slf4j
 @Service
@@ -29,6 +30,7 @@ public class UpdateUserService implements UpdateUserUseCase {
   private final GetUserByIdPort getUserByIdPort;
   private final GetUserByEmailPort getUserByEmailPort;
   private final EmailNotificationService emailNotificationService;
+  private final UserEventPublisherPort userEventPublisherPort;
   private final Validator validator;
 
   @Override
@@ -45,12 +47,14 @@ public class UpdateUserService implements UpdateUserUseCase {
         UserApplicationMapper.fromUpdateCommandToModel(command, current.getPassword());
     final UserModel updatedUser = updateUserPort.update(userToUpdate);
 
+    userEventPublisherPort.publishUserUpdated(new UserUpdatedDomainEvent(updatedUser));
+
     try {
       emailNotificationService.notifyUserUpdated(updatedUser);
     } catch (final Exception exception) {
       log.warn(
-          "[UpdateUserService] No se pudo enviar el correo de actualizacion al usuario {}: {}",
-          updatedUser.getEmail().value(),
+          "[UpdateUserService] No se pudo enviar el correo de actualizacion al usuario con id {}: {}",
+          updatedUser.getId().value(),
           exception.getMessage());
     }
 

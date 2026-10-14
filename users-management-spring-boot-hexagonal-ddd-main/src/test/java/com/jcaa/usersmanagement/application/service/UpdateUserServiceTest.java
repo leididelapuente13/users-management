@@ -1,15 +1,22 @@
 package com.jcaa.usersmanagement.application.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.jcaa.usersmanagement.application.port.out.GetUserByEmailPort;
 import com.jcaa.usersmanagement.application.port.out.GetUserByIdPort;
 import com.jcaa.usersmanagement.application.port.out.UpdateUserPort;
+import com.jcaa.usersmanagement.application.port.out.UserEventPublisherPort;
 import com.jcaa.usersmanagement.application.service.dto.command.UpdateUserCommand;
 import com.jcaa.usersmanagement.domain.enums.UserRole;
 import com.jcaa.usersmanagement.domain.enums.UserStatus;
+import com.jcaa.usersmanagement.domain.event.UserUpdatedDomainEvent;
 import com.jcaa.usersmanagement.domain.exception.UserAlreadyExistsException;
 import com.jcaa.usersmanagement.domain.exception.UserNotFoundException;
 import com.jcaa.usersmanagement.domain.model.UserModel;
@@ -42,6 +49,7 @@ class UpdateUserServiceTest {
   @Mock private GetUserByIdPort getUserByIdPort;
   @Mock private GetUserByEmailPort getUserByEmailPort;
   @Mock private EmailNotificationService emailNotificationService;
+  @Mock private UserEventPublisherPort userEventPublisherPort;
 
   private UpdateUserService service;
 
@@ -60,6 +68,7 @@ class UpdateUserServiceTest {
               getUserByIdPort,
               getUserByEmailPort,
               emailNotificationService,
+              userEventPublisherPort,
               validatorFactory.getValidator());
     }
 
@@ -76,7 +85,7 @@ class UpdateUserServiceTest {
   // ── flujo feliz
 
   @Test
-  @DisplayName("execute() actualiza el usuario y envía notificación cuando los datos son válidos")
+  @DisplayName("execute() actualiza el usuario, publica evento y envía notificación cuando los datos son válidos")
   void shouldUpdateUserAndNotifyWhenDataIsValid() {
     // Arrange
     final UpdateUserCommand command =
@@ -92,6 +101,7 @@ class UpdateUserServiceTest {
     // Assert
     assertNotNull(result);
     verify(updateUserPort).update(any(UserModel.class));
+    verify(userEventPublisherPort).publishUserUpdated(any(UserUpdatedDomainEvent.class));
     verify(emailNotificationService).notifyUserUpdated(existingUser);
   }
 
@@ -109,6 +119,7 @@ class UpdateUserServiceTest {
     // Act & Assert
     assertThrows(UserNotFoundException.class, () -> service.execute(command));
     verify(updateUserPort, never()).update(any());
+    verify(userEventPublisherPort, never()).publishUserUpdated(any());
   }
 
   // ── email tomado por otro usuario
@@ -136,6 +147,7 @@ class UpdateUserServiceTest {
     // Act & Assert
     assertThrows(UserAlreadyExistsException.class, () -> service.execute(command));
     verify(updateUserPort, never()).update(any());
+    verify(userEventPublisherPort, never()).publishUserUpdated(any());
   }
 
   // ── email del mismo usuario: no debe lanzar excepción
@@ -154,6 +166,7 @@ class UpdateUserServiceTest {
     // Act & Assert
     assertDoesNotThrow(() -> service.execute(command));
     verify(updateUserPort).update(any());
+    verify(userEventPublisherPort).publishUserUpdated(any(UserUpdatedDomainEvent.class));
   }
 
   // ── validación del command
@@ -168,6 +181,11 @@ class UpdateUserServiceTest {
 
     // Act & Assert
     assertThrows(ConstraintViolationException.class, () -> service.execute(command));
-    verifyNoInteractions(updateUserPort, getUserByIdPort, getUserByEmailPort);
+    verifyNoInteractions(
+        updateUserPort,
+        getUserByIdPort,
+        getUserByEmailPort,
+        emailNotificationService,
+        userEventPublisherPort);
   }
 }
