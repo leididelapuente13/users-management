@@ -29,7 +29,6 @@ public class UpdateUserService implements UpdateUserUseCase {
   private final UpdateUserPort updateUserPort;
   private final GetUserByIdPort getUserByIdPort;
   private final GetUserByEmailPort getUserByEmailPort;
-  private final EmailNotificationService emailNotificationService;
   private final UserEventPublisherPort userEventPublisherPort;
   private final Validator validator;
 
@@ -48,15 +47,6 @@ public class UpdateUserService implements UpdateUserUseCase {
     final UserModel updatedUser = updateUserPort.update(userToUpdate);
 
     userEventPublisherPort.publishUserUpdated(new UserUpdatedDomainEvent(updatedUser));
-
-    try {
-      emailNotificationService.notifyUserUpdated(updatedUser);
-    } catch (final Exception exception) {
-      log.warn(
-          "[UpdateUserService] No se pudo enviar el correo de actualizacion al usuario con id {}: {}",
-          updatedUser.getId().value(),
-          exception.getMessage());
-    }
 
     return updatedUser;
   }

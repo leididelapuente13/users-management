@@ -25,7 +25,6 @@ public class CreateUserService implements CreateUserUseCase {
 
   private final SaveUserPort saveUserPort;
   private final GetUserByEmailPort getUserByEmailPort;
-  private final EmailNotificationService emailNotificationService;
   private final UserEventPublisherPort userEventPublisherPort;
   private final Validator validator;
 
@@ -40,15 +39,6 @@ public class CreateUserService implements CreateUserUseCase {
     final UserModel savedUser = saveUserPort.save(userToSave);
 
     userEventPublisherPort.publishUserCreated(new UserCreatedDomainEvent(savedUser));
-
-    try {
-      emailNotificationService.notifyUserCreated(savedUser, command.password());
-    } catch (final Exception exception) {
-      log.warn(
-          "[CreateUserService] No se pudo enviar el correo de bienvenida al usuario con id {}: {}",
-          savedUser.getId().value(),
-          exception.getMessage());
-    }
 
     return savedUser;
   }

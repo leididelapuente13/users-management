@@ -48,7 +48,6 @@ class UpdateUserServiceTest {
   @Mock private UpdateUserPort updateUserPort;
   @Mock private GetUserByIdPort getUserByIdPort;
   @Mock private GetUserByEmailPort getUserByEmailPort;
-  @Mock private EmailNotificationService emailNotificationService;
   @Mock private UserEventPublisherPort userEventPublisherPort;
 
   private UpdateUserService service;
@@ -67,7 +66,6 @@ class UpdateUserServiceTest {
               updateUserPort,
               getUserByIdPort,
               getUserByEmailPort,
-              emailNotificationService,
               userEventPublisherPort,
               validatorFactory.getValidator());
     }
@@ -85,7 +83,7 @@ class UpdateUserServiceTest {
   // ── flujo feliz
 
   @Test
-  @DisplayName("execute() actualiza el usuario, publica evento y envía notificación cuando los datos son válidos")
+  @DisplayName("execute() actualiza el usuario y publica evento cuando los datos son válidos")
   void shouldUpdateUserAndNotifyWhenDataIsValid() {
     // Arrange
     final UpdateUserCommand command =
@@ -102,7 +100,6 @@ class UpdateUserServiceTest {
     assertNotNull(result);
     verify(updateUserPort).update(any(UserModel.class));
     verify(userEventPublisherPort).publishUserUpdated(any(UserUpdatedDomainEvent.class));
-    verify(emailNotificationService).notifyUserUpdated(existingUser);
   }
 
   // ── usuario no encontrado
@@ -185,7 +182,6 @@ class UpdateUserServiceTest {
         updateUserPort,
         getUserByIdPort,
         getUserByEmailPort,
-        emailNotificationService,
         userEventPublisherPort);
   }
 }
