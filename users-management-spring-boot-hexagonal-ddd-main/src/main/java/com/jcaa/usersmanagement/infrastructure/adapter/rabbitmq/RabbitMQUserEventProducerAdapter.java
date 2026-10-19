@@ -2,14 +2,17 @@ package com.jcaa.usersmanagement.infrastructure.adapter.rabbitmq;
 
 import com.jcaa.usersmanagement.application.port.out.UserEventPublisherPort;
 import com.jcaa.usersmanagement.domain.event.UserCreatedDomainEvent;
+import com.jcaa.usersmanagement.domain.event.UserDeletedDomainEvent;
 import com.jcaa.usersmanagement.domain.event.UserUpdatedDomainEvent;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.MessageDeliveryMode;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -19,14 +22,17 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RabbitMQUserEventProducerAdapter implements UserEventPublisherPort {
 
-  private static final String PROP_EXCHANGE = "${rabbitmq.exchange.user-events:user.exchange}";
+  private static final String PROP_EXCHANGE =
+      "${rabbitmq.exchange.user-events:domain.events}";
   private static final String PROP_ROUTING_KEY_CREATED =
       "${rabbitmq.routing-key.user-created:user.created}";
   private static final String PROP_ROUTING_KEY_UPDATED =
       "${rabbitmq.routing-key.user-updated:user.updated}";
+  private static final String PROP_ROUTING_KEY_DELETED =
+      "${rabbitmq.routing-key.user-deleted:user.deleted}";
 
-  private static final String FIELD_EVENT = "event";
-  private static final String FIELD_TIMESTAMP = "occurredOn";
+  private static final String FIELD_EVENT_NAME = "eventName";
+  private static final String FIELD_OCCURRED_ON = "occurredOn";
   private static final String FIELD_PAYLOAD = "payload";
 
   private static final String LOG_EVENT_SENT =
@@ -44,6 +50,9 @@ public class RabbitMQUserEventProducerAdapter implements UserEventPublisherPort 
 
   @Value(PROP_ROUTING_KEY_UPDATED)
   private String userUpdatedRoutingKey;
+
+  @Value(PROP_ROUTING_KEY_DELETED)
+  private String userDeletedRoutingKey;
 
   @Override
   public void publishUserCreated(final UserCreatedDomainEvent event) {
@@ -63,6 +72,15 @@ public class RabbitMQUserEventProducerAdapter implements UserEventPublisherPort 
     dispatchAsync(event.getEventName(), userUpdatedRoutingKey, userId, event.payload());
   }
 
+  @Override
+  public void publishUserDeleted(final UserDeletedDomainEvent event) {
+    if (Objects.isNull(event) || Objects.isNull(event.getUserId())) {
+      return;
+    }
+    final String userId = event.getUserId().value();
+    dispatchAsync(event.getEventName(), userDeletedRoutingKey, userId, event.payload());
+  }
+
   private void dispatchAsync(
       final String eventName,
       final String routingKey,
@@ -72,8 +90,8 @@ public class RabbitMQUserEventProducerAdapter implements UserEventPublisherPort 
         () -> {
           try {
             final Map<String, Object> messageBody = new HashMap<>();
-            messageBody.put(FIELD_EVENT, eventName);
-            messageBody.put(FIELD_TIMESTAMP, Instant.now().toString());
+            messageBody.put(FIELD_EVENT_NAME, eventName);
+            messageBody.put(FIELD_OCCURRED_ON, LocalDateTime.now().toString());
             messageBody.put(FIELD_PAYLOAD, payload);
 
             rabbitTemplate.convertAndSend(
@@ -81,6 +99,8 @@ public class RabbitMQUserEventProducerAdapter implements UserEventPublisherPort 
                 routingKey,
                 messageBody,
                 message -> {
+                  message.getMessageProperties().setContentType(MessageProperties.CONTENT_TYPE_JSON);
+                  message.getMessageProperties().setDeliveryMode(MessageDeliveryMode.PERSISTENT);
                   message.getMessageProperties().setCorrelationId(userId);
                   return message;
                 });
@@ -93,4 +113,3 @@ public class RabbitMQUserEventProducerAdapter implements UserEventPublisherPort 
         });
   }
 }
-

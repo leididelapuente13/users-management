@@ -21,7 +21,7 @@ public class RabbitMQProducerConfig {
   private static final String PROP_RABBITMQ_URL =
       "${spring.rabbitmq.addresses:${RABBITMQ_URL:amqp://guest:guest@localhost:5672/}}";
   private static final String PROP_EXCHANGE =
-      "${rabbitmq.exchange.user-events:user.exchange}";
+      "${rabbitmq.exchange.user-events:domain.events}";
 
   private static final String LOG_CONFIG_RABBITMQ =
       "[RabbitMQProducerConfig] Configurando conexion RabbitMQ con URL: {} y Exchange: {}";

@@ -25,7 +25,7 @@ class RabbitMQProducerConfigTest {
     // Arrange
     final RabbitMQProducerConfig config = new RabbitMQProducerConfig();
     final String rabbitUrl = "amqp://user:secret@localhost:5672/test-vhost";
-    final String exchangeName = "user.exchange";
+    final String exchangeName = "domain.events";
 
     ReflectionTestUtils.setField(config, "rabbitMqUrl", rabbitUrl);
     ReflectionTestUtils.setField(config, "exchangeName", exchangeName);
