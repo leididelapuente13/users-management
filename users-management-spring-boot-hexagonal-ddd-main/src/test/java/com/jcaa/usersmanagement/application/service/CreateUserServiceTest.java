@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.jcaa.usersmanagement.application.port.out.CreateUserAccountPort;
 import com.jcaa.usersmanagement.application.port.out.GetUserByEmailPort;
 import com.jcaa.usersmanagement.application.port.out.SaveUserPort;
 import com.jcaa.usersmanagement.application.port.out.UserEventPublisherPort;
@@ -46,6 +47,7 @@ class CreateUserServiceTest {
   @Mock private SaveUserPort saveUserPort;
   @Mock private GetUserByEmailPort getUserByEmailPort;
   @Mock private UserEventPublisherPort userEventPublisherPort;
+  @Mock private CreateUserAccountPort createUserAccountPort;
 
   private CreateUserService service;
 
@@ -57,6 +59,7 @@ class CreateUserServiceTest {
               saveUserPort,
               getUserByEmailPort,
               userEventPublisherPort,
+              createUserAccountPort,
               validatorFactory.getValidator());
     }
   }
@@ -92,6 +95,7 @@ class CreateUserServiceTest {
         () -> assertEquals("u-01", result.getId().value(), "id del usuario guardado"));
 
     verify(saveUserPort).save(any(UserModel.class));
+    verify(createUserAccountPort).createAccount(any(UserModel.class));
     verify(userEventPublisherPort).publishUserCreated(any(UserCreatedDomainEvent.class));
   }
 
@@ -118,6 +122,7 @@ class CreateUserServiceTest {
     // Act & Assert
     assertThrows(UserAlreadyExistsException.class, () -> service.execute(command));
     verify(saveUserPort, never()).save(any());
+    verify(createUserAccountPort, never()).createAccount(any());
     verify(userEventPublisherPort, never()).publishUserCreated(any());
   }
 
@@ -133,6 +138,6 @@ class CreateUserServiceTest {
 
     // Act & Assert
     assertThrows(ConstraintViolationException.class, () -> service.execute(command));
-    verifyNoInteractions(saveUserPort, getUserByEmailPort, userEventPublisherPort);
+    verifyNoInteractions(saveUserPort, getUserByEmailPort, userEventPublisherPort, createUserAccountPort);
   }
 }
