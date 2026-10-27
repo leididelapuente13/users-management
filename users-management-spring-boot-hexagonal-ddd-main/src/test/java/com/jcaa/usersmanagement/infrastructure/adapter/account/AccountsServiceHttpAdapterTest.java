@@ -1,6 +1,7 @@
 package com.jcaa.usersmanagement.infrastructure.adapter.account;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -19,6 +20,7 @@ import com.jcaa.usersmanagement.domain.valueobject.UserPassword;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -173,5 +175,20 @@ class AccountsServiceHttpAdapterTest {
   void shouldIgnoreNullUser() {
     // Act & Assert
     assertDoesNotThrow(() -> adapter.createAccount(null));
+  }
+
+  @Test
+  @DisplayName("Spring ApplicationContext puede instanciar AccountsServiceHttpAdapter sin No default constructor found")
+  void shouldBeInstantiableBySpringContainer() {
+    // Arrange
+    try (final AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+      context.getBeanFactory().registerSingleton("objectMapper", new ObjectMapper());
+      context.register(AccountsServiceHttpAdapter.class);
+
+      // Act & Assert
+      assertDoesNotThrow(context::refresh);
+      final AccountsServiceHttpAdapter bean = context.getBean(AccountsServiceHttpAdapter.class);
+      assertNotNull(bean);
+    }
   }
 }

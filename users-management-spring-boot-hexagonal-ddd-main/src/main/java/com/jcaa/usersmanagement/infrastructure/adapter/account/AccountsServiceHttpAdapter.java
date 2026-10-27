@@ -8,6 +8,7 @@ import com.jcaa.usersmanagement.infrastructure.adapter.account.dto.response.Acco
 import java.time.Duration;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -49,6 +50,7 @@ public class AccountsServiceHttpAdapter implements CreateUserAccountPort {
   private final ObjectMapper objectMapper;
   private final String accountsServiceUrl;
 
+  @Autowired
   public AccountsServiceHttpAdapter(
       @Value(PROP_ACCOUNTS_SERVICE_URL) final String accountsServiceUrl,
       @Value(PROP_CONNECT_TIMEOUT_MS) final int connectTimeoutMs,
